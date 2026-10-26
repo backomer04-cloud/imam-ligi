@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İmam Ligi -1</title>
+    <!-- Firebase SDK (Modular CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqW0ThcMa9VipzkWXL-IDiYMy7Qhf0OYA",
+            authDomain: "imam-ligi--1.firebaseapp.com",
+            projectId: "imam-ligi--1",
+            storageBucket: "imam-ligi--1.firebasestorage.app",
+            messagingSenderId: "535689829045",
+            appId: "1:535689829045:web:cec1aba08eafb765dc3cfc",
+            measurementId: "G-EYV9TG62HC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+        window.query = query;
+        window.where = where;
+
+        window.addEventListener('load', () => {
+            fetchWeekData('1');
+        });
+    </script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131d31;
+            --card-border: rgba(225, 29, 72, 0.2);
+            --accent-color: #f43f5e;
+            --accent-gradient: linear-gradient(135deg, #f43f5e, #881337);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --gold: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(136, 19, 55, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(225, 29, 72, 0.1) 0%, transparent 40%);
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding-bottom: 50px; }
+
+        header { text-align: center; margin-bottom: 25px; }
+        header h1 {
+            font-size: 2.5rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        header p { color: var(--text-muted); font-size: 1rem; }
+
+        .tabs-container {
+            display: flex; justify-content: center; gap: 10px;
+            margin-bottom: 30px; flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            color: var(--text-muted); padding: 10px 22px; border-radius: 12px;
+            font-weight: 600; cursor: pointer; transition: var(--transition);
+        }
+        .tab-btn:hover { border-color: var(--accent-color); color: var(--text-main); }
+        .tab-btn.active {
+            background: var(--accent-gradient); color: white; border-color: transparent;
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
+        }
+
+        .content-section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-title {
+            font-size: 1.25rem; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px; font-weight: 700;
+        }
+
+        .table-container {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 20px; overflow-x: auto; margin-bottom: 25px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+        th, td { padding: 16px 20px; }
+        th {
+            background-color: rgba(15, 23, 42, 0.6); color: var(--text-muted);
+            font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--card-border);
+        }
+        td { border-bottom: 1px solid rgba(225, 29, 72, 0.05); font-size: 0.95rem; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.015); }
+        .rank { font-weight: 800; color: var(--accent-color); }
+
+        .circular-progress {
+            width: 46px; height: 46px; border-radius: 50%;
+            background: conic-gradient(var(--success) 0deg, rgba(255, 255, 255, 0.08) 0deg);
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .circular-progress::before {
+            content: ''; position: absolute; width: 36px; height: 36px;
+            background: #131d31; border-radius: 50%;
+        }
+        .circular-progress span { position: relative; font-size: 0.68rem; font-weight: 700; color: var(--text-main); }
+
+        .bottom-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .info-card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 20px; padding: 22px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .info-card h3 { font-size: 1.1rem; margin-bottom: 15px; color: var(--accent-color); display: flex; align-items: center; gap: 8px; }
+        .info-card ul { list-style: none; }
+        .info-card li {
+            font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;
+            display: flex; justify-content: space-between; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .info-card li span { font-weight: 600; color: var(--text-main); }
+
+        footer { text-align: center; margin-top: 40px; border-top: 1px solid var(--card-border); padding-top: 25px; }
+        .admin-trigger-btn {
+            background: transparent; border: 1px dashed var(--card-border); color: var(--text-muted);
+            padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.9rem; transition: var(--transition);
+        }
+        .admin-trigger-btn:hover { border-color: var(--accent-color); color: var(--accent-color); background: rgba(225, 29, 72, 0.05); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+        }
+        .modal-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 20px; width: 100%; max-width: 580px; padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-close { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+        .modal-box h2 { font-size: 1.4rem; margin-bottom: 20px; color: var(--accent-color); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 15px; background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-size: 0.95rem; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-color); }
+        .btn-primary {
+            width: 100%; padding: 12px; background: var(--accent-gradient);
+            border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; margin-top: 10px;
+        }
+        .btn-danger { background: var(--danger); }
+        .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; text-align: center; }
+
+        .admin-record-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 10px;
+            margin-bottom: 8px; border: 1px solid var(--card-border); font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>İmam Ligi -1</h1>
+            <p>Haftalık Mücadele, Kaleci İstatistikleri & Aylık Genel Durum</p>
+        </header>
+
+        <!-- Hafta ve Ay Sekmeleri -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('hafta1', '1')">1. Hafta</button>
+            <button class="tab-btn" onclick="switchTab('hafta2', '2')">2. Hafta</button>
+            <button class="tab-btn" onclick="switchTab('hafta3', '3')">3. Hafta</button>
+            <button class="tab-btn" onclick="switchTab('hafta4', '4')">4. Hafta</button>
+            <button class="tab-btn" onclick="switchTab('aylik', 'aylik')" style="border-color: var(--gold); color: var(--gold);">🏆 Ayın Özeti</button>
+        </div>
+
+        <!-- HAFTA SEKMELERİ -->
+        <div id="hafta1" class="content-section active" data-week="1">
+            <div class="section-title">⚽ Saha İçi Oyuncuları</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Oyuncu</th><th>Gol</th><th>Asist</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="player-table-1"></tbody>
+                </table>
+            </div>
+            <div class="section-title">🧤 Kaleci İstatistikleri</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Kaleci</th><th>Kurtarış</th><th>Pen. Kurtarış</th><th>Yenilen Gol (-2)</th><th>Penaltı (-3)</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="keeper-table-1"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="hafta2" class="content-section" data-week="2">
+            <div class="section-title">⚽ Saha İçi Oyuncuları</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Oyuncu</th><th>Gol</th><th>Asist</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="player-table-2"></tbody>
+                </table>
+            </div>
+            <div class="section-title">🧤 Kaleci İstatistikleri</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Kaleci</th><th>Kurtarış</th><th>Pen. Kurtarış</th><th>Yenilen Gol (-2)</th><th>Penaltı (-3)</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="keeper-table-2"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="hafta3" class="content-section" data-week="3">
+            <div class="section-title">⚽ Saha İçi Oyuncuları</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Oyuncu</th><th>Gol</th><th>Asist</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="player-table-3"></tbody>
+                </table>
+            </div>
+            <div class="section-title">🧤 Kaleci İstatistikleri</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Kaleci</th><th>Kurtarış</th><th>Pen. Kurtarış</th><th>Yenilen Gol (-2)</th><th>Penaltı (-3)</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="keeper-table-3"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="hafta4" class="content-section" data-week="4">
+            <div class="section-title">⚽ Saha İçi Oyuncuları</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Oyuncu</th><th>Gol</th><th>Asist</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="player-table-4"></tbody>
+                </table>
+            </div>
+            <div class="section-title">🧤 Kaleci İstatistikleri</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Kaleci</th><th>Kurtarış</th><th>Pen. Kurtarış</th><th>Yenilen Gol (-2)</th><th>Penaltı (-3)</th><th>Oylama</th><th>Toplam Puan</th><th>Performans Formu</th></tr></thead>
+                    <tbody id="keeper-table-4"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- AYIN ÖZETİ (4. Hafta Kilidiyle) -->
+        <div id="aylik" class="content-section" data-week="aylik">
+            <div id="monthlyLockMsg" style="text-align: center; padding: 40px; color: var(--danger); font-weight: 700; font-size: 1.1rem;">
+                🔒 Ayın Özeti, 4 haftanın istatistikleri tamamlandığında açılacaktır!
+            </div>
+            <div id="monthlyContent" style="display: none;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                    <div class="info-card" style="text-align: center;">
+                        <span style="background: rgba(245, 158, 11, 0.15); color: var(--gold); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">👑 AYIN OYUNCUSU</span>
+                        <div id="monthlyPlayer" style="font-size: 1.5rem; font-weight: 800; margin-top: 10px;">-</div>
+                    </div>
+                    <div class="info-card" style="text-align: center;">
+                        <span style="background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">🧤 AYIN KALECİSİ</span>
+                        <div id="monthlyKeeper" style="font-size: 1.5rem; font-weight: 800; margin-top: 10px;">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kurallar -->
+        <div class="bottom-grid">
+            <div class="info-card">
+                <h3>⚡ Saha İçi Kurallar</h3>
+                <ul>
+                    <li>Gol: <span>+2 Puan</span></li>
+                    <li>Asist: <span>+1 Puan</span></li>
+                    <li>Oylama: <span>0 - 50 Puan</span></li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>🧤 Kaleci Kuralları</h3>
+                <ul>
+                    <li>Kurtarış / Pen. Kurtarış: <span>+2 Puan</span></li>
+                    <li>Yenilen Gol: <span>-2 Puan</span> | Penaltı: <span>-3 Puan</span></li>
+                    <li>Oylama: <span>0 - 50 Puan</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <footer>
+            <button class="admin-trigger-btn" onclick="openLoginModal()">🔐 Admin Paneli</button>
+        </footer>
+    </div>
+
+    <!-- GİRİŞ MODALI -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 420px;">
+            <button class="modal-close" onclick="closeModals()">✕</button>
+            <h2>Admin Girişi</h2>
+            <div class="form-group"><label>E-posta</label><input type="email" id="adminEmail" placeholder="omer@10a.com"></div>
+            <div class="form-group"><label>Şifre</label><input type="password" id="adminPassword" placeholder="******"></div>
+            <button class="btn-primary" onclick="handleLogin()">Giriş Yap</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANELİ MODALI -->
+    <div id="adminPanelModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModals()">✕</button>
+            <h2 id="adminPanelTitle">⚡ Yeni Veri Ekle</h2>
+            
+            <input type="hidden" id="editingDocId" value="">
+
+            <div class="form-group">
+                <label>Kategori Seçimi</label>
+                <select id="dataCategory" onchange="toggleCategoryInputs()">
+                    <option value="oyuncu">⚽ Saha İçi Oyuncusu</option>
+                    <option value="kaleci">🧤 Kaleci</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Hafta Seçimi</label>
+                <select id="matchWeek">
+                    <option value="1">1. Hafta</option>
+                    <option value="2">2. Hafta</option>
+                    <option value="3">3. Hafta</option>
+                    <option value="4">4. Hafta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Kişi Adı</label>
+                <input type="text" id="playerName" placeholder="Ad Soyad">
+            </div>
+
+            <!-- Oyuncu Alanları -->
+            <div id="playerInputs">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group"><label>Gol</label><input type="number" id="goals" value="0"></div>
+                    <div class="form-group"><label>Asist</label><input type="number" id="assists" value="0"></div>
+                </div>
+            </div>
+
+            <!-- Kaleci Alanları -->
+            <div id="keeperInputs" style="display:none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group"><label>Kurtarış</label><input type="number" id="saves" value="0"></div>
+                    <div class="form-group"><label>Penaltı Kurtarışı</label><input type="number" id="penaltySaves" value="0"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group"><label>Yenilen Gol (-2)</label><input type="number" id="goalsConceded" value="0"></div>
+                    <div class="form-group"><label>Penaltı Yapma (-3)</label><input type="number" id="penaltiesConceded" value="0"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Arkadaş Oylaması (0 - 50)</label>
+                <input type="number" id="vote" value="0" max="50" min="0">
+            </div>
+
+            <button class="btn-primary" id="saveBtn" onclick="saveData()">Veriyi Kaydet</button>
+            <button class="btn-primary btn-danger" id="cancelEditBtn" style="display:none; margin-top:5px;" onclick="resetAdminForm()">Düzenlemeyi İptal Et</button>
+            <div id="saveStatus" style="text-align: center; margin-top: 10px; font-size: 0.9rem;"></div>
+
+            <!-- Mevcut Kayıtlar Listesi -->
+            <div style="margin-top: 25px; border-top: 1px solid var(--card-border); padding-top: 15px;">
+                <label style="margin-bottom: 8px; display:block; color:var(--text-muted); font-size:0.85rem; font-weight:700;">Mevcut Kayıtları Yönet (Düzenle / Sil)</label>
+                <div id="adminRecordList" style="max-height: 180px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_CREDENTIALS = { email: "omer@10a.com", password: "10asifesi" };
+        let activeWeekForAdmin = '1';
+
+        window.switchTab = function(tabId, weekNum) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            if (weekNum === 'aylik') {
+                checkAndCalculateMonthlySummary();
+            } else {
+                activeWeekForAdmin = weekNum;
+                fetchWeekData(weekNum);
+            }
+        }
+
+        window.toggleCategoryInputs = function() {
+            const cat = document.getElementById('dataCategory').value;
+            document.getElementById('playerInputs').style.display = cat === 'oyuncu' ? 'block' : 'none';
+            document.getElementById('keeperInputs').style.display = cat === 'kaleci' ? 'block' : 'none';
+        }
+
+        async function fetchWeekData(weekNum) {
+            const pTbody = document.getElementById(`player-table-${weekNum}`);
+            const kTbody = document.getElementById(`keeper-table-${weekNum}`);
+            if (!pTbody) return;
+
+            pTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Yükleniyor...</td></tr>`;
+            kTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Yükleniyor...</td></tr>`;
+
+            try {
+                const q = window.query(window.collection(window.db, "match_stats"), window.where("week", "==", weekNum));
+                const querySnapshot = await window.getDocs(q);
+                const data = [];
+                querySnapshot.forEach((docSnap) => { 
+                    data.push({ id: docSnap.id, ...docSnap.data() }); 
+                });
+
+                // Tavan Puanlar (Oyuncu için 60, Kaleci için 80)
+                const PLAYER_MAX_SCORE = 60;
+                const KEEPER_MAX_SCORE = 80;
+
+                // Oyuncular
+                const players = data.filter(d => d.category === 'oyuncu').sort((a,b) => b.total_score - a.total_score);
+                pTbody.innerHTML = players.length === 0 ? `<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Bu hafta veri girilmedi.</td></tr>` : '';
+
+                players.forEach((row, index) => {
+                    let percent = Math.round((row.total_score / PLAYER_MAX_SCORE) * 100);
+                    if (percent > 100) percent = 100;
+                    if (percent < 0) percent = 0;
+
+                    pTbody.innerHTML += `
+                        <tr>
+                            <td class="rank">${index + 1}</td>
+                            <td><strong>${row.player_name}</strong></td>
+                            <td>${row.goals}</td>
+                            <td>${row.assists}</td>
+                            <td>${row.vote}</td>
+                            <td><strong>${row.total_score}</strong></td>
+                            <td>
+                                <div class="circular-progress" style="background: conic-gradient(var(--success) ${(percent/100)*360}deg, rgba(255,255,255,0.08) 0deg);">
+                                    <span>${percent}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+
+                // Kaleciler
+                const keepers = data.filter(d => d.category === 'kaleci').sort((a,b) => b.total_score - a.total_score);
+                kTbody.innerHTML = keepers.length === 0 ? `<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Bu hafta kaleci verisi yok.</td></tr>` : '';
+                
+                keepers.forEach((row, index) => {
+                    let percent = Math.round((row.total_score / KEEPER_MAX_SCORE) * 100);
+                    if (percent > 100) percent = 100;
+                    if (percent < 0) percent = 0;
+
+                    kTbody.innerHTML += `
+                        <tr>
+                            <td class="rank">${index + 1}</td>
+                            <td><strong>${row.player_name}</strong></td>
+                            <td>${row.saves}</td>
+                            <td>${row.penalty_saves}</td>
+                            <td style="color:var(--danger)">${row.goals_conceded}</td>
+                            <td style="color:var(--danger)">${row.penalties_conceded}</td>
+                            <td>${row.vote}</td>
+                            <td><strong>${row.total_score}</strong></td>
+                            <td>
+                                <div class="circular-progress" style="background: conic-gradient(var(--success) ${(percent/100)*360}deg, rgba(255,255,255,0.08) 0deg);">
+                                    <span>${percent}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadAdminRecordList() {
+            const listDiv = document.getElementById('adminRecordList');
+            listDiv.innerHTML = `<div style="color:var(--text-muted); text-align:center;">Yükleniyor...</div>`;
+
+            try {
+                const querySnapshot = await window.getDocs(window.collection(window.db, "match_stats"));
+                listDiv.innerHTML = '';
+                if (querySnapshot.empty) {
+                    listDiv.innerHTML = `<div style="color:var(--text-muted); text-align:center;">Kayıt bulunamadı.</div>`;
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const item = docSnap.data();
+                    const docId = docSnap.id;
+                    listDiv.innerHTML += `
+                        <div class="admin-record-row">
+                            <span><b>[${item.week}.H]</b> ${item.player_name} (${item.category}) - ${item.total_score} P</span>
+                            <div>
+                                <button onclick='prepareEditRecord("${docId}", ${JSON.stringify(item)})' style="background:var(--accent-color); border:none; color:white; padding:4px 8px; border-radius:6px; cursor:pointer; margin-right:4px;">Düzenle</button>
+                                <button onclick='deleteRecord("${docId}")' style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:6px; cursor:pointer;">Sil</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.prepareEditRecord = function(docId, item) {
+            document.getElementById('editingDocId').value = docId;
+            document.getElementById('adminPanelTitle').innerText = "✏️ Kaydı Düzenle";
+            document.getElementById('saveBtn').innerText = "Güncellemeyi Kaydet";
+            document.getElementById('cancelEditBtn').style.display = 'block';
+
+            document.getElementById('dataCategory').value = item.category;
+            toggleCategoryInputs();
+            document.getElementById('matchWeek').value = item.week;
+            document.getElementById('playerName').value = item.player_name;
+            document.getElementById('vote').value = item.vote || 0;
+
+            if (item.category === 'oyuncu') {
+                document.getElementById('goals').value = item.goals || 0;
+                document.getElementById('assists').value = item.assists || 0;
+            } else {
+                document.getElementById('saves').value = item.saves || 0;
+                document.getElementById('penaltySaves').value = item.penalty_saves || 0;
+                document.getElementById('goalsConceded').value = item.goals_conceded || 0;
+                document.getElementById('penaltiesConceded').value = item.penalties_conceded || 0;
+            }
+        }
+
+        window.resetAdminForm = function() {
+            document.getElementById('editingDocId').value = '';
+            document.getElementById('adminPanelTitle').innerText = "⚡ Yeni Veri Ekle";
+            document.getElementById('saveBtn').innerText = "Veriyi Kaydet";
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            document.getElementById('playerName').value = '';
+            document.getElementById('goals').value = 0;
+            document.getElementById('assists').value = 0;
+            document.getElementById('saves').value = 0;
+            document.getElementById('penaltySaves').value = 0;
+            document.getElementById('goalsConceded').value = 0;
+            document.getElementById('penaltiesConceded').value = 0;
+            document.getElementById('vote').value = 0;
+            document.getElementById('saveStatus').innerText = '';
+        }
+
+        window.deleteRecord = async function(docId) {
+            if (!confirm("Bu kaydı silmek istediğine emin misin kanki?")) return;
+            try {
+                await window.deleteDoc(window.doc(window.db, "match_stats", docId));
+                loadAdminRecordList();
+                fetchWeekData(activeWeekForAdmin);
+            } catch (e) {
+                alert("Silinirken hata oluştu!");
+            }
+        }
+
+        window.saveData = async function() {
+            const docId = document.getElementById('editingDocId').value;
+            const category = document.getElementById('dataCategory').value;
+            const week = document.getElementById('matchWeek').value;
+            const name = document.getElementById('playerName').value.trim();
+            const vote = parseInt(document.getElementById('vote').value) || 0;
+            const statusDiv = document.getElementById('saveStatus');
+
+            if (!name) { statusDiv.innerText = "İsim gir kanki!"; return; }
+
+            let totalScore = 0;
+            let payload = { week, category, player_name: name, vote };
+
+            if (category === 'oyuncu') {
+                const goals = parseInt(document.getElementById('goals').value) || 0;
+                const assists = parseInt(document.getElementById('assists').value) || 0;
+                totalScore = (goals * 2) + (assists * 1) + vote;
+                payload = { ...payload, goals, assists, total_score: totalScore };
+            } else {
+                const saves = parseInt(document.getElementById('saves').value) || 0;
+                const penalty_saves = parseInt(document.getElementById('penaltySaves').value) || 0;
+                const goals_conceded = parseInt(document.getElementById('goalsConceded').value) || 0;
+                const penalties_conceded = parseInt(document.getElementById('penaltiesConceded').value) || 0;
+                
+                totalScore = (saves * 2) + (penalty_saves * 2) - (goals_conceded * 2) - (penalties_conceded * 3) + vote;
+                payload = { ...payload, saves, penalty_saves, goals_conceded, penalties_conceded, total_score: totalScore };
+            }
+
+            statusDiv.innerText = "İşleniyor...";
+            try {
+                if (docId) {
+                    await window.updateDoc(window.doc(window.db, "match_stats", docId), payload);
+                    statusDiv.style.color = 'var(--success)';
+                    statusDiv.innerText = `✅ Başarıyla güncellendi!`;
+                } else {
+                    payload.createdAt = new Date();
+                    await window.addDoc(window.collection(window.db, "match_stats"), payload);
+                    statusDiv.style.color = 'var(--success)';
+                    statusDiv.innerText = `✅ Başarıyla eklendi! Toplam Puan: ${totalScore}`;
+                }
+
+                setTimeout(() => { 
+                    resetAdminForm();
+                    loadAdminRecordList();
+                    fetchWeekData(week); 
+                }, 1000);
+            } catch (e) {
+                statusDiv.style.color = 'var(--danger)';
+                statusDiv.innerText = "Hata oluştu!";
+            }
+        }
+
+        async function checkAndCalculateMonthlySummary() {
+            try {
+                const querySnapshot = await window.getDocs(window.collection(window.db, "match_stats"));
+                const weeksFound = new Set();
+                const pTotals = {};
+                const kTotals = {};
+
+                querySnapshot.forEach((doc) => {
+                    const row = doc.data();
+                    weeksFound.add(row.week);
+                    if (row.category === 'oyuncu') {
+                        pTotals[row.player_name] = (pTotals[row.player_name] || 0) + row.total_score;
+                    } else if (row.category === 'kaleci') {
+                        kTotals[row.player_name] = (kTotals[row.player_name] || 0) + row.total_score;
+                    }
+                });
+
+                const isComplete = weeksFound.has('1') && weeksFound.has('2') && weeksFound.has('3') && weeksFound.has('4');
+
+                if (!isComplete) {
+                    document.getElementById('monthlyLockMsg').style.display = 'block';
+                    document.getElementById('monthlyContent').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('monthlyLockMsg').style.display = 'none';
+                document.getElementById('monthlyContent').style.display = 'block';
+
+                const topPlayer = Object.entries(pTotals).sort((a,b) => b[1] - a[1])[0];
+                const topKeeper = Object.entries(kTotals).sort((a,b) => b[1] - a[1])[0];
+
+                document.getElementById('monthlyPlayer').innerText = topPlayer ? `${topPlayer[0]} (${topPlayer[1]} Puan)` : "Veri Yok";
+                document.getElementById('monthlyKeeper').innerText = topKeeper ? `${topKeeper[0]} (${topKeeper[1]} Puan)` : "Veri Yok";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.openLoginModal = function() { document.getElementById('loginModal').style.display = 'flex'; }
+        window.closeModals = function() { 
+            document.getElementById('loginModal').style.display = 'none'; 
+            document.getElementById('adminPanelModal').style.display = 'none'; 
+            resetAdminForm();
+        }
+        
+        window.handleLogin = function() {
+            if (document.getElementById('adminEmail').value === ADMIN_CREDENTIALS.email && document.getElementById('adminPassword').value === ADMIN_CREDENTIALS.password) {
+                closeModals(); 
+                document.getElementById('adminPanelModal').style.display = 'flex';
+                loadAdminRecordList();
+            } else { document.getElementById('loginError').innerText = "Hatalı şifre kanki!"; }
+        }
+    </script>
+</body>
+</html>
