@@ -133,7 +133,6 @@
             border: 1px solid rgba(244, 63, 94, 0.3);
         }
         .avatar.keeper { background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(4, 120, 87, 0.5)); border-color: rgba(16, 185, 129, 0.3); }
-        .avatar.playmaker { background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(3, 105, 161, 0.5)); border-color: rgba(56, 189, 248, 0.3); }
         .goals-total { font-weight: 800; padding: 3px 10px; background: rgba(244, 63, 94, 0.12); border-radius: 8px; border: 1px solid rgba(244, 63, 94, 0.2); }
         .score-cell { font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--accent-soft); }
 
@@ -160,22 +159,27 @@
         .monthly-card { text-align: center; padding: 36px 24px; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
         .monthly-card.mvp { border-color: rgba(251, 191, 36, 0.6); }
         .monthly-card.keeper { border-color: rgba(16, 185, 129, 0.6); }
-        .monthly-card.playmaker { border-color: rgba(56, 189, 248, 0.6); }
+        .monthly-card.duo-box { border-color: rgba(56, 189, 248, 0.6); display: flex; flex-direction: column; justify-content: space-between; padding: 24px; }
         
         .crown { font-size: 2.5rem; margin-bottom: 12px; display: block; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6)); }
         .monthly-badge { padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; display: inline-block; margin-bottom: 14px; text-transform: uppercase; }
         .mvp .monthly-badge { background: rgba(251, 191, 36, 0.15); color: var(--gold); border: 1px solid rgba(251, 191, 36, 0.4); }
         .keeper .monthly-badge { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.4); }
-        .playmaker .monthly-badge { background: rgba(56, 189, 248, 0.15); color: var(--info); border: 1px solid rgba(56, 189, 248, 0.4); }
 
         .monthly-name { font-size: 1.8rem; font-weight: 900; font-family: 'Space Grotesk', sans-serif; margin-bottom: 14px; }
         .mvp .monthly-name { color: var(--gold-soft); text-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
         .keeper .monthly-name { color: #6ee7b7; text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
-        .playmaker .monthly-name { color: #7dd3fc; text-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
         
         .monthly-stats { font-size: 0.92rem; color: var(--text-soft); font-weight: 600; line-height: 1.8; background: rgba(5,7,15,0.6); padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); }
 
-        /* Ay Arşivi Sekmesi Stilleri (Sadece Ballon d'Or ve Altın Eldiven) */
+        /* İkiye bölünmüş Asistçi & Golcü alt kutuları */
+        .sub-stat-box { background: rgba(5,7,15,0.5); border-radius: 14px; padding: 14px; border: 1px solid rgba(56, 189, 248, 0.2); text-align: center; }
+        .sub-stat-box + .sub-stat-box { margin-top: 14px; }
+        .sub-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--info); margin-bottom: 6px; }
+        .sub-name { font-size: 1.3rem; font-weight: 900; font-family: 'Space Grotesk', sans-serif; color: #7dd3fc; margin-bottom: 4px; }
+        .sub-val { font-size: 0.85rem; color: var(--text-soft); font-weight: 600; }
+
+        /* Ay Arşivi Sekmesi Stilleri */
         .archive-section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 24px; color: var(--gold); display: flex; align-items: center; gap: 10px; }
         .monthly-archive-card {
             background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 24px; padding: 30px; margin-bottom: 30px; box-shadow: var(--shadow-md);
@@ -349,11 +353,22 @@
                         <div id="monthlyKeeper" class="monthly-name">-</div>
                         <div id="monthlyKeeperStats" class="monthly-stats"></div>
                     </div>
-                    <div class="monthly-card playmaker">
-                        <span class="crown">🎯</span>
-                        <div class="monthly-badge">Ayın Asistçisi (Playmaker)</div>
-                        <div id="monthlyPlaymaker" class="monthly-name">-</div>
-                        <div id="monthlyPlaymakerStats" class="monthly-stats"></div>
+                    <!-- İkiye Bölünmüş Ortak Kutu: Ayın Asistçisi & Golcüsü -->
+                    <div class="monthly-card duo-box">
+                        <div>
+                            <span class="crown" style="font-size: 2rem; margin-bottom: 8px;">🔥</span>
+                            <div class="monthly-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--info); border: 1px solid rgba(56, 189, 248, 0.4);">Ayın Liderleri</div>
+                        </div>
+                        <div class="sub-stat-box">
+                            <div class="sub-title">🎯 Ayın Asistçisi (Playmaker)</div>
+                            <div id="monthlyPlaymaker" class="sub-name">-</div>
+                            <div id="monthlyPlaymakerStats" class="sub-val">-</div>
+                        </div>
+                        <div class="sub-stat-box">
+                            <div class="sub-title">⚽ Ayın Golcüsü (Top Scorer)</div>
+                            <div id="monthlyTopScorer" class="sub-name">-</div>
+                            <div id="monthlyTopScorerStats" class="sub-val">-</div>
+                        </div>
                     </div>
                 </div>
 
@@ -377,7 +392,7 @@
             </div>
         </div>
 
-        <!-- AY ARŞİVİ SEKMESİ (Sadece Ballon d'Or ve Altın Eldiven) -->
+        <!-- AY ARŞİVİ SEKMESİ -->
         <div id="arsiv" class="content-section" data-week="arsiv">
             <div class="archive-section-title">📜 İmam Ligi -1 Geçmiş Ay Arşivi</div>
             <div id="archivedMonthsContainer"></div>
@@ -439,7 +454,6 @@
                 <div style="margin-bottom: 14px;">
                     <button class="btn-primary" style="background: var(--gold-gradient); color: #1a1000; margin:0;" onclick="archiveCurrentMonthAutomatically()">Mevcut Dönemi Otomatik Arşive Kaydet</button>
                 </div>
-                <!-- Arşivden Ay Silme Alanı -->
                 <div>
                     <label style="color: var(--text-muted); font-size: 0.75rem; display:block; margin-bottom:6px;">Arşivden Ay Sil</label>
                     <div style="display: flex; gap: 8px;">
@@ -622,7 +636,7 @@
             } catch (e) { console.error(e); }
         }
 
-        // --- HESAPLAMA: DETAYLI AYIN ÖZETİ VE TOPLAM TABLOLAR ---
+        // --- HESAPLAMA: DETAYLI AYIN ÖZETİ VE LİDERLER ---
         async function calculateDetailedMonthlySummary() {
             try {
                 const querySnapshot = await window.getDocs(window.collection(window.db, "match_stats"));
@@ -656,7 +670,8 @@
                 let topPlayer = playersList.length > 0 ? playersList[0] : { name: "Veri Yok", goals: 0, assists: 0, totalScore: 0 };
                 let topKeeper = keepersList.length > 0 ? keepersList[0] : { name: "Veri Yok", saves: 0, goalsConceded: 0, totalScore: 0 };
                 
-                let topPlaymaker = playersList.length > 0 ? [...playersList].sort((a,b) => b.assists - a.assists)[0] : { name: "Veri Yok", assists: 0, goals: 0, totalScore: 0 };
+                let topPlaymaker = playersList.length > 0 ? [...playersList].sort((a,b) => b.assists - a.assists)[0] : { name: "Veri Yok", assists: 0 };
+                let topScorer = playersList.length > 0 ? [...playersList].sort((a,b) => b.goals - a.goals)[0] : { name: "Veri Yok", goals: 0 };
 
                 // Kartları doldur
                 document.getElementById('monthlyPlayer').innerText = topPlayer.name;
@@ -665,10 +680,14 @@
                 document.getElementById('monthlyKeeper').innerText = topKeeper.name;
                 document.getElementById('monthlyKeeperStats').innerText = `🧤 Toplam Kurtarış: ${topKeeper.saves}  |  ❌ Yenilen Gol: ${topKeeper.goalsConceded}  |  ⭐ Toplam Puan: ${topKeeper.totalScore} P`;
 
+                // İkiye bölünmüş ortak kutu verileri
                 document.getElementById('monthlyPlaymaker').innerText = topPlaymaker.name;
-                document.getElementById('monthlyPlaymakerStats').innerText = `🎯 Toplam Asist: ${topPlaymaker.assists}  |  ⚽ Gol: ${topPlaymaker.goals}  |  ⭐ Puan: ${topPlaymaker.totalScore} P`;
+                document.getElementById('monthlyPlaymakerStats').innerText = `🎯 Toplam Asist: ${topPlaymaker.assists || 0}`;
 
-                // Toplam Oyuncu Tablosunu 1'den başlayarak doldur
+                document.getElementById('monthlyTopScorer').innerText = topScorer.name;
+                document.getElementById('monthlyTopScorerStats').innerText = `⚽ Toplam Gol: ${topScorer.goals || 0}`;
+
+                // Toplam Oyuncu Tablosu
                 const pTotalTbody = document.getElementById('monthly-total-player-table');
                 pTotalTbody.innerHTML = playersList.length === 0 ? `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">Veri bulunamadı.</td></tr>` : '';
                 playersList.forEach((row, index) => {
@@ -684,7 +703,7 @@
                     `;
                 });
 
-                // Toplam Kaleci Tablosunu 1'den başlayarak doldur
+                // Toplam Kaleci Tablosu
                 const kTotalTbody = document.getElementById('monthly-total-keeper-table');
                 kTotalTbody.innerHTML = keepersList.length === 0 ? `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">Veri bulunamadı.</td></tr>` : '';
                 keepersList.forEach((row, index) => {
@@ -749,7 +768,7 @@
                                 countdownArea.style.display = 'none';
                                 activeContent.style.display = 'block';
                                 activeContent.classList.remove('reveal-effect');
-                                void activeContent.offsetWidth; // Reflow reset for animation
+                                void activeContent.offsetWidth;
                                 activeContent.classList.add('reveal-effect');
                             }
                         }
@@ -772,7 +791,7 @@
             }, 1000);
         }
 
-        // --- OTOMATİK ARŞİVLEME (Arşivde sadece Ballon d'Or ve Altın Eldiven tutulur) ---
+        // --- OTOMATİK ARŞİVLEME ---
         async function archiveCurrentMonthAutomatically() {
             try {
                 const archiveSnapshot = await window.getDocs(window.collection(window.db, "monthly_archives"));
